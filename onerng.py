@@ -13,8 +13,8 @@ import argparse
 import fcntl
 
 feed_rate = 5
-bs = 128
-count = 200
+sample_size = 128
+sample_count = 200
 
 def onerng_start(ser):
     ser.write(b'cmd0')
@@ -31,6 +31,14 @@ def onerng_initialize(ser):
     onerng_start(ser)
     byte = ser.read()
     time.sleep(2.5)
+
+def onerng_snarf_firmware(ser):
+    ser.write(b'cmdO')
+    ser.write(b'cmdX')
+    # set timeout for 3.5 seconds while grabbing firmware to memory buffer
+    ser.write(b'cmdo')
+    ser.write(b'cmdw')
+    # execute onerng_verify.py logic here
 
 def main():
     parser = argparse.ArgumentParser(description='portable OneRNG daemon')
@@ -51,9 +59,9 @@ def main():
     if args.debug is True:
         print(sys.argv[0]+': looping', args.device)
     while True:
-        bytes = ser.read(bs * count)
+        bytes = ser.read(sample_size * sample_count)
         if args.debug is True:
-            print (sys.argv[0]+': received', len(bytes), 'bytes (expected', (bs * count), ')')
+            print (sys.argv[0]+': received', len(bytes), 'bytes (expected', (sample_size * sample_count), ')')
         with open('/dev/random', 'wb') as dev_random:
             bytes_written = dev_random.write(bytes)
             if args.debug is True:
